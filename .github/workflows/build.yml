@@ -3,14 +3,8 @@ name: Build and Push
 on:
   push:
     branches:
-      # - 'emv/**'
+      - 'emv/**'
       - main
-
-
-env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
   build:
@@ -21,9 +15,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
 
+      # TODO: investigate how to assume role to follow best practices
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
       - name: Login to Amazon ECR
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
