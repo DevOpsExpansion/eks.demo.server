@@ -1,0 +1,48 @@
+name: Helm - build and push
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'emv/**'
+      - main
+
+    paths:
+      - 'helm/chart/**'
+
+jobs:
+  build:
+    name: Build & Push helm chart
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ASSUME_ROLE_ARN }}
+          mask-aws-account-id: false
+
+      - name: Install Helm S3 plugin
+        run: helm plugin install https://github.com/hypnoglow/helm-s3.git
+
+      - name: Check if repository is initialized, init if false
+        id: repo-check
+        run: |
+          aws s3 ls s3://${{ secrets.HELM_REPOSITORY_BUCKET }}/${{ github.ref_name }}/index.yaml || \
+          helm s3 init s3://${{ secrets.HELM_REPOSITORY_BUCKET }}/${{ github.ref_name }}
+      
+      - name: Add helm repository
+        run : helm repo add bucket s3://${{ secrets.HELM_REPOSITORY_BUCKET }}/${{ github.ref_name }} 
+
+      - name: Package helm chart
+        run: helm package -d ./helm/dist ./helm/chart
+
+      - name: Push helm chart
+        run: helm s3 push ./helm/dist/* bucket

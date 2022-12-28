@@ -1,10 +1,14 @@
 name: Build and Push
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - 'emv/**'
       - main
+
+    paths:
+      - '!helm/*'
 
 jobs:
   build:
