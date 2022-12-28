@@ -9,19 +9,21 @@ on:
 jobs:
   build:
     name: Build & Push docker image
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
 
-      # TODO: investigate how to assume role to follow best practices
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-region: ${{ secrets.AWS_REGION }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ASSUME_ROLE_ARN }}
+          mask-aws-account-id: false
 
       - name: Login to Amazon ECR
         id: login-ecr
