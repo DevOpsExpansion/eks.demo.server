@@ -3,6 +3,5 @@ name: server
 description: Demo application backend for POC eks repository
 type: application
 
-version: 0.1.0
+version: 0.3.0
 appVersion: 0.0.0
-kubeVersion: ^1.20
