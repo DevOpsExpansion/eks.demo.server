@@ -1,0 +1,59 @@
+name: Deploy via Helm
+on:
+  workflow_dispatch:
+    inputs:
+      namespace:
+        type: choice
+        description: 'Namespace'
+        required: true
+        default: 'default'
+        options:
+        - main
+        - dev
+
+      createNamespace:
+        type: boolean
+        description: 'Whether to create namespace'
+        required: false
+        default: true
+      
+      chartName:
+        type: string
+        description: 'Name of helm chart to deploy'
+        required: true
+        default: server
+
+      chartVersion:
+        type: string
+        description: 'Semantic version of helm chart to deploy'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ASSUME_ROLE_ARN }}
+          mask-aws-account-id: false
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name demo
+
+      - name: Test kubectl
+        run: kubectl get all --all-namespaces
+
+      - name: Install Helm S3 plugin
+        run: helm plugin install https://github.com/hypnoglow/helm-s3.git
+
+      - name: Add helm repository
+        run : helm repo add bucket s3://${{ secrets.HELM_REPOSITORY_BUCKET }}/${{ github.ref_name }} 
