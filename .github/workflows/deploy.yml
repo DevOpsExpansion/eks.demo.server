@@ -1,12 +1,15 @@
 name: Deploy via Helm
 on:
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
     inputs:
-      releaseName:
+      imageTag:
         type: string
-        description: "Release name"
+        description: "Image tag"
         required: true
-        default: server
+        default: latest
 
       namespace:
         type: choice
@@ -17,22 +20,6 @@ on:
           - main
           - dev
 
-      createNamespace:
-        type: boolean
-        description: "Whether to create namespace"
-        required: false
-        default: true
-
-      chartName:
-        type: string
-        description: "Name of helm chart to deploy"
-        required: true
-        default: server
-
-      chartVersion:
-        type: string
-        description: "Semantic version of helm chart to deploy"
-        required: true
 
 jobs:
   deploy:
@@ -55,11 +42,19 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name demo
 
-      - name: Install Helm S3 plugin
-        run: helm plugin install https://github.com/hypnoglow/helm-s3.git
+      - name: Install kustomize
+        run: curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
 
-      - name: Add helm repository
-        run: helm repo add bucket s3://${{ secrets.HELM_REPOSITORY_BUCKET }}/${{ github.ref_name }}
+      - name: Patch kustomize
+        working-directory: ./k8s
+        env:
+          ROLE_ARN: ${{ secrets.AWS_SECRETS_ACCESS_ROLE_ARN }}
+        run: > 
+          kustomize edit add patch --kind ServiceAccount --patch "[{\"op\": \"replace\", \"path\": \"/metadata/annotations/eks.amazonaws.com~1role-arn\", \"value\": $ROLE_ARN }]"
 
-      - name: Helm install
-        run: helm install ${{ inputs.releaseName }} -n ${{ inputs.namespace }} --create-namespace bucket/${{ inputs.chartName }} --version ${{ inputs.chartVersion }}
+      - name: Build kustomize
+        working-directory: ./k8s
+        run: kustomize build . > rendered.yaml
+
+      - name: Print rendered template
+        run: cat ./k8s/rendered.yaml
