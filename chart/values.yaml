@@ -1,0 +1,27 @@
+server:
+  name: server
+  image: image:0.0.0
+  port: 8080
+
+  replicaCount: 1
+  commonLabels:
+    application: server
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  secret:
+    name: server-secret
+    objectName: ""
+    objectRegion: ""
+    alias: config
+
+serviceAccount:
+  create: true
+  name: server
+  irsa_arn: ""
+

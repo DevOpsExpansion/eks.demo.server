@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import * as dotenv from "dotenv";
+import morgan from "morgan";
 
 import postRoutes from "./routes/posts.js";
 import userRouter from "./routes/user.js";
@@ -10,6 +11,7 @@ dotenv.config();
 
 const app = express();
 
+app.use(morgan("[:date[clf]] :status :url | :total-time[3] ms"));
 app.use(express.json({ limit: "30mb", extended: true }));
 app.use(express.urlencoded({ limit: "30mb", extended: true }));
 app.use(cors());

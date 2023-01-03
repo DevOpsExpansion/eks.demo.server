@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.server.name }}
+  labels: 
+    {{ toYaml .Values.server.commonLabels }}
+spec:
+  {{- if not .Values.server.autoscaling.enabled }}
+  replicas: {{ .Values.server.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{ toYaml .Values.server.commonLabels }}
+  template:
+    metadata:
+      labels:
+        {{ toYaml .Values.server.commonLabels }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: {{ .Values.server.name }}
+          securityContext:
+          image: {{ .Values.server.image }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          env:
+            - name: CONNECTION_URL
+              valueFrom: 
+                secretKeyRef: 
+                  name: {{ .Values.server.secret.name }}
+                  key: CONNECTION_URL
+            - name: DATABASE_NAME
+              valueFrom: 
+                secretKeyRef: 
+                  name: {{ .Values.server.secret.name }}
+                  key: DATABASE_NAME
+            - name: PORT
+              valueFrom: 
+                secretKeyRef: 
+                  name: {{ .Values.server.secret.name }}
+                  key: PORT
+
+          volumeMounts:
+            - name: config
+              mountPath: /mnt/config
+              readOnly: true
+
+      volumes:
+        - name: {{ .Values.server.secret.alias }}
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: aws-secrets
