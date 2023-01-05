@@ -42,19 +42,5 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name demo
 
-      - name: Install kustomize
-        run: curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
-
-      - name: Patch kustomize
-        working-directory: ./k8s
-        env:
-          ROLE_ARN: ${{ secrets.AWS_SECRETS_ACCESS_ROLE_ARN }}
-        run: > 
-          kustomize edit add patch --kind ServiceAccount --patch "[{\"op\": \"replace\", \"path\": \"/metadata/annotations/eks.amazonaws.com~1role-arn\", \"value\": $ROLE_ARN }]"
-
-      - name: Build kustomize
-        working-directory: ./k8s
-        run: kustomize build . > rendered.yaml
-
-      - name: Print rendered template
-        run: cat ./k8s/rendered.yaml
+      - name: Install using Helm
+        run: helm install
