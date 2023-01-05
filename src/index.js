@@ -1,5 +1,4 @@
 import express from "express";
-import { MongoClient } from "mongodb";
 import mongoose from "mongoose";
 import cors from "cors";
 import * as dotenv from "dotenv";
@@ -12,6 +11,7 @@ import { readFileSync } from "fs";
 dotenv.config();
 
 const app = express();
+setTimeout(() => {}, 5000);
 
 app.use(morgan("[:date[clf]] :status :url | :total-time[3] ms"));
 app.use(express.json({ limit: "30mb", extended: true }));
@@ -24,7 +24,12 @@ const token = readFileSync(process.env.AWS_WEB_IDENTITY_TOKEN_FILE, {
   encoding: "utf8",
   flag: "r",
 });
-const CONNECTION_URL = `${process.env.CONNECTION_URL}?retryWrites=true&w=majority&authMechanism=MONGODB-AWS&authMechanismProperties=AWS_SESSION_TOKEN:${token}`;
+encodeURIComponent;
+const CONNECTION_URL = `${
+  process.env.CONNECTION_URL
+}?retryWrites=true&w=majority&authSource=%24external&authMechanismProperties=AWS_SESSION_TOKEN:${encodeURIComponent(
+  token
+)}`;
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => console.log(`Server Running on Port: http://:${PORT}`));
@@ -34,6 +39,7 @@ mongoose
     dbName: process.env.DATABASE_NAME,
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    authMechanism: "MONGODB-AWS",
   })
   .then(() =>
     app.listen(PORT, () =>

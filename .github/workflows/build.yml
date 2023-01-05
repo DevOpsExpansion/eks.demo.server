@@ -4,11 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'emv/**'
+      - 'env/**'
       - main
-
-    paths:
-      - '!helm/*'
 
 jobs:
   build:
